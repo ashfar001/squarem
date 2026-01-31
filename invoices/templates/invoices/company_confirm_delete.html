@@ -1,0 +1,35 @@
+{% extends 'invoices/base.html' %}
+
+{% block title %}Delete Company{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Confirm Delete</h5>
+                </div>
+                <div class="card-body">
+                    <p>Are you sure you want to delete the following company?</p>
+                    <div class="alert alert-warning">
+                        <strong>Name:</strong> {{ company.name }}<br>
+                        <strong>Address:</strong> {{ company.address }}
+                    </div>
+                    <p class="text-danger"><strong>This will also delete all invoices issued by this company!</strong></p>
+                    
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <a href="{% url 'company_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Yes, Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,415 @@
+{% extends 'invoices/base.html' %}
+
+{% block title %}{{ action }} Invoice - Squarem Invoice{% endblock %}
+
+{% block extra_css %}
+<style>
+    .formset-row {
+        background: white;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+    }
+    .formset-row.to-delete {
+        background: #fee2e2;
+        opacity: 0.6;
+        display: none;
+    }
+    
+    /* Mobile-friendly form controls */
+    .form-control, .form-select {
+        min-height: 48px;
+        border-radius: 10px;
+        font-size: 16px; /* Prevents iOS zoom */
+    }
+    
+    .form-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-bottom: 0.35rem;
+    }
+    
+    /* Mobile item rows */
+    @media (max-width: 767px) {
+        .formset-row .row > div {
+            margin-bottom: 0.75rem;
+        }
+        
+        .item-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        
+        .item-grid .description-col {
+            grid-column: 1 / -1;
+        }
+    }
+    
+    /* Card styles */
+    .form-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    
+    .form-card h5 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .form-card h5 i {
+        color: var(--accent-primary);
+    }
+    
+    /* Submit area */
+    .submit-area {
+        position: fixed;
+        bottom: 70px;
+        left: 0;
+        right: 0;
+        background: white;
+        padding: 1rem;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        z-index: 100;
+        display: flex;
+        gap: 0.75rem;
+    }
+    
+    .submit-area .btn {
+        flex: 1;
+        min-height: 48px;
+        font-weight: 600;
+        border-radius: 12px;
+    }
+    
+    @media (min-width: 768px) {
+        .submit-area {
+            position: static;
+            background: transparent;
+            box-shadow: none;
+            padding: 0;
+            margin-bottom: 2rem;
+            justify-content: flex-end;
+        }
+        
+        .submit-area .btn {
+            flex: none;
+            padding: 0.5rem 1.5rem;
+        }
+    }
+    
+    .main-content-form {
+        padding-bottom: 150px;
+    }
+    
+    @media (min-width: 768px) {
+        .main-content-form { padding-bottom: 90px; }
+    }
+    
+    .delete-item {
+        min-height: 48px;
+        border-radius: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content-form">
+    <!-- Page Header -->
+    <div class="mb-4">
+        <h1 class="page-title">{{ action }} Invoice</h1>
+        <p class="page-subtitle">{% if action == 'Create' %}Create a new invoice{% else %}Update invoice details{% endif %}</p>
+    </div>
+
+    <form method="post" id="invoice-form">
+        {% csrf_token %}
+        
+        <!-- Display Form Errors -->
+        {% if form.errors or formset.errors or formset.non_form_errors %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert" style="border-radius: 12px;">
+            <strong><i class="bi bi-exclamation-triangle"></i> Please fix these errors:</strong>
+            <ul class="mb-0 mt-2" style="padding-left: 1.25rem;">
+                {% for field in form %}
+                    {% if field.errors %}
+                        {% for error in field.errors %}
+                        <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+                {% if form.non_field_errors %}
+                    {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                {% endif %}
+                {% if formset.non_form_errors %}
+                    {% for error in formset.non_form_errors %}
+                    <li><strong>Items:</strong> {{ error }}</li>
+                    {% endfor %}
+                {% endif %}
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+        
+        <!-- Basic Invoice Info -->
+        <div class="form-card">
+            <h5><i class="bi bi-receipt"></i> Invoice Details</h5>
+            
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Company</label>
+                    {{ form.company }}
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Client</label>
+                    <div class="d-flex gap-2">
+                        <div class="flex-grow-1">{{ form.client }}</div>
+                        <a href="{% url 'client_create' %}" class="btn btn-outline-primary" title="Add New Client" style="height: 42px; display: flex; align-items: center;">
+                            <i class="bi bi-plus-lg"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Invoice Date</label>
+                    {{ form.invoice_date }}
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Due Date</label>
+                    {{ form.due_date }}
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Currency</label>
+                    {{ form.currency }}
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Status</label>
+                    {{ form.status }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Line Items -->
+        <div class="form-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0"><i class="bi bi-list-ul"></i> Items</h5>
+                <button type="button" class="btn btn-primary btn-sm" id="add-item" style="border-radius: 8px;">
+                    <i class="bi bi-plus"></i> Add
+                </button>
+            </div>
+            
+            {{ formset.management_form }}
+            
+            <div id="items-container">
+                {% for item_form in formset %}
+                <div class="formset-row" data-index="{{ forloop.counter0 }}">
+                    <div class="item-grid">
+                        <div class="description-col">
+                            <label class="form-label">Description</label>
+                            {{ item_form.description }}
+                        </div>
+                        <div>
+                            <label class="form-label">Unit</label>
+                            {{ item_form.unit_type }}
+                        </div>
+                        <div>
+                            <label class="form-label">Qty</label>
+                            {{ item_form.quantity }}
+                        </div>
+                        <div>
+                            <label class="form-label">Rate (₹)</label>
+                            {{ item_form.rate }}
+                        </div>
+                        <div>
+                            <label class="form-label">Discount %</label>
+                            {{ item_form.discount }}
+                        </div>
+                        <div>
+                            <label class="form-label">GST %</label>
+                            {{ item_form.tax_rate }}
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-outline-danger btn-sm delete-item w-100">
+                            <i class="bi bi-trash"></i> Remove Item
+                        </button>
+                    </div>
+                    {{ item_form.id }}
+                    <div style="display: none;">{{ item_form.DELETE }}</div>
+                </div>
+                {% empty %}
+                <!-- Empty state - will be replaced by JS when adding items -->
+                {% endfor %}
+            </div>
+            
+            <!-- Empty state message -->
+            <div id="no-items-msg" class="text-center py-4 text-muted" style="{% if formset.forms %}display:none;{% endif %}">
+                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                <p class="mb-0">No items added. Click "Add" to add line items.</p>
+            </div>
+        </div>
+
+        <!-- Hidden template for new items -->
+        <template id="item-template">
+            <div class="formset-row">
+                <div class="item-grid">
+                    <div class="description-col">
+                        <label class="form-label">Description</label>
+                        <input type="text" name="items-__prefix__-description" class="form-control" placeholder="Work/Material description">
+                    </div>
+                    <div>
+                        <label class="form-label">Unit</label>
+                        <select name="items-__prefix__-unit_type" class="form-control form-select">
+                            <option value="sqft">Square Feet (Sq.Ft)</option>
+                            <option value="sqm">Square Meter (Sq.M)</option>
+                            <option value="rft">Running Feet (R.Ft)</option>
+                            <option value="rm">Running Meter (R.M)</option>
+                            <option value="cft">Cubic Feet (Cu.Ft)</option>
+                            <option value="cum">Cubic Meter (Cu.M)</option>
+                            <option value="nos" selected>Numbers (Nos)</option>
+                            <option value="kg">Kilogram (Kg)</option>
+                            <option value="ton">Metric Ton</option>
+                            <option value="bag">Bags</option>
+                            <option value="ltr">Liters</option>
+                            <option value="ls">Lump Sum (L.S)</option>
+                            <option value="day">Per Day</option>
+                            <option value="hr">Per Hour</option>
+                            <option value="trip">Per Trip</option>
+                            <option value="load">Per Load</option>
+                            <option value="lot">Per Lot</option>
+                            <option value="each">Each</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Qty</label>
+                        <input type="number" name="items-__prefix__-quantity" class="form-control" step="0.01" min="0.01" value="1">
+                    </div>
+                    <div>
+                        <label class="form-label">Rate (₹)</label>
+                        <input type="number" name="items-__prefix__-rate" class="form-control" step="0.01" min="0" placeholder="0.00">
+                    </div>
+                    <div>
+                        <label class="form-label">Discount %</label>
+                        <input type="number" name="items-__prefix__-discount" class="form-control" step="0.01" min="0" max="100" value="0">
+                    </div>
+                    <div>
+                        <label class="form-label">GST %</label>
+                        <input type="number" name="items-__prefix__-tax_rate" class="form-control" step="0.01" min="0" value="9">
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button type="button" class="btn btn-outline-danger btn-sm delete-item w-100">
+                        <i class="bi bi-trash"></i> Remove Item
+                    </button>
+                </div>
+                <input type="hidden" name="items-__prefix__-id" value="">
+                <div style="display: none;"><input type="checkbox" name="items-__prefix__-DELETE"></div>
+            </div>
+        </template>
+
+        <!-- Notes and Terms -->
+        <div class="form-card">
+            <h5><i class="bi bi-text-paragraph"></i> Additional Info</h5>
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Notes</label>
+                    {{ form.notes }}
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Terms & Conditions</label>
+                    {{ form.terms }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Buttons -->
+        <div class="submit-area">
+            <a href="{% url 'invoice_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-x"></i> Cancel
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check2"></i> Save Invoice
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Handle dynamic formset
+    let itemIndex = {{ formset.total_form_count }};
+    
+    function updateEmptyState() {
+        const container = document.getElementById('items-container');
+        const visibleRows = container.querySelectorAll('.formset-row:not(.to-delete)');
+        const noItemsMsg = document.getElementById('no-items-msg');
+        if (visibleRows.length === 0) {
+            noItemsMsg.style.display = 'block';
+        } else {
+            noItemsMsg.style.display = 'none';
+        }
+    }
+    
+    document.getElementById('add-item').addEventListener('click', function() {
+        const container = document.getElementById('items-container');
+        const totalForms = document.querySelector('[name="items-TOTAL_FORMS"]');
+        const template = document.getElementById('item-template');
+        
+        // Clone from template
+        const newForm = template.content.cloneNode(true);
+        const newRow = newForm.querySelector('.formset-row');
+        
+        // Update form indexes
+        newRow.innerHTML = newRow.innerHTML.replace(/__prefix__/g, itemIndex);
+        
+        container.appendChild(newRow);
+        totalForms.value = parseInt(totalForms.value) + 1;
+        itemIndex++;
+        
+        // Update empty state
+        updateEmptyState();
+        
+        // Scroll to new item
+        newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Focus on description field
+        newRow.querySelector('input[name$="-description"]').focus();
+    });
+    
+    // Handle delete
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.delete-item')) {
+            const row = e.target.closest('.formset-row');
+            const deleteCheckbox = row.querySelector('[name$="-DELETE"]');
+            const idField = row.querySelector('[name$="-id"]');
+            
+            // If this is a saved item (has an ID), mark for deletion
+            if (idField && idField.value) {
+                deleteCheckbox.checked = true;
+                row.classList.add('to-delete');
+            } else {
+                // If it's a new unsaved item, just remove from DOM
+                row.remove();
+                // Update total forms count
+                const totalForms = document.querySelector('[name="items-TOTAL_FORMS"]');
+                totalForms.value = parseInt(totalForms.value) - 1;
+            }
+            
+            // Update empty state
+            updateEmptyState();
+        }
+    });
+    
+    // Initial check for empty state
+    updateEmptyState();
+</script>
+{% endblock %}

@@ -1,0 +1,107 @@
+{% extends 'invoices/base.html' %}
+{% load humanize %}
+
+{% block title %}Dashboard - Squarem Invoice{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="mb-4">
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">Overview of your invoices</p>
+</div>
+
+<!-- Statistics Cards - Mobile Grid -->
+<div class="row g-3 mb-4">
+    <div class="col-6">
+        <div class="stat-card primary">
+            <div class="stat-icon">
+                <i class="bi bi-receipt"></i>
+            </div>
+            <div class="stat-value">{{ total_invoices }}</div>
+            <div class="stat-label">Total Invoices</div>
+        </div>
+    </div>
+    
+    <div class="col-6">
+        <div class="stat-card success">
+            <div class="stat-icon">
+                <i class="bi bi-currency-rupee"></i>
+            </div>
+            <div class="stat-value">₹{{ total_revenue|floatformat:0|intcomma }}</div>
+            <div class="stat-label">Total Revenue</div>
+        </div>
+    </div>
+    
+    <div class="col-6">
+        <div class="stat-card" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); color: white;">
+            <div class="stat-icon">
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="stat-value">{{ paid_invoices }}</div>
+            <div class="stat-label">Paid</div>
+        </div>
+    </div>
+    
+    <div class="col-6">
+        <div class="stat-card danger">
+            <div class="stat-icon">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <div class="stat-value">{{ overdue_invoices }}</div>
+            <div class="stat-label">Overdue</div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Invoices -->
+<div class="card">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0" style="font-weight: 600;">Recent Invoices</h6>
+            <a href="{% url 'invoice_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+        </div>
+        
+        {% if recent_invoices %}
+        <!-- Mobile Card View -->
+        <div class="d-block">
+            {% for invoice in recent_invoices %}
+            <a href="{% url 'invoice_detail' invoice.pk %}" class="text-decoration-none">
+                <div class="invoice-card">
+                    <div class="invoice-card-header">
+                        <div>
+                            <div class="invoice-number">{{ invoice.invoice_number }}</div>
+                            <div class="invoice-client">{{ invoice.client.name }}</div>
+                        </div>
+                        <span class="status-badge status-{{ invoice.get_display_status }}">
+                            {% if invoice.get_display_status == 'paid' %}
+                            <i class="bi bi-check-circle-fill"></i>
+                            {% elif invoice.get_display_status == 'overdue' %}
+                            <i class="bi bi-exclamation-circle-fill"></i>
+                            {% else %}
+                            <i class="bi bi-clock-fill"></i>
+                            {% endif %}
+                            {{ invoice.get_status_label }}
+                        </span>
+                    </div>
+                    <div class="invoice-card-body">
+                        <div class="invoice-amount">₹{{ invoice.total|floatformat:0|intcomma }}</div>
+                        <div class="invoice-date">Due: {{ invoice.due_date|date:"d M, Y" }}</div>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <i class="bi bi-receipt"></i>
+            <h3>No invoices yet</h3>
+            <p>Create your first invoice to get started</p>
+            <a href="{% url 'invoice_create' %}" class="btn btn-primary btn-lg">
+                <i class="bi bi-plus-circle"></i> Create Invoice
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

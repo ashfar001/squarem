@@ -1,0 +1,1071 @@
+{% extends 'invoices/base.html' %}
+{% load static %}
+{% load humanize %}
+{% load invoice_filters %}
+
+{% block title %}Invoice {{ invoice.invoice_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+        .no-print { display: none !important; }
+        .bottom-nav { display: none !important; }
+        .action-bar-container { display: none !important; }
+        body { background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .invoice-page { box-shadow: none !important; margin: 0 !important; border-radius: 0 !important; }
+        @page { size: A4; margin: 8mm; }
+        .main-content { padding-bottom: 0 !important; }
+    }
+    
+    /* Status Header */
+    .invoice-status-header {
+        background: white;
+        border-radius: 16px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    
+    .invoice-status-header .status-info h2 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin: 0;
+    }
+    
+    .invoice-status-header .status-info p {
+        margin: 0.25rem 0 0 0;
+        color: var(--text-muted);
+        font-size: 0.875rem;
+    }
+    
+    .invoice-status-header .status-badge {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Invoice Page - Matches PDF exactly */
+    .invoice-page {
+        background: #fff;
+        padding: 15px;
+        border-radius: 12px;
+        font-family: 'Inter', Arial, sans-serif;
+        font-size: 11px;
+        color: #333;
+        margin-bottom: 1rem;
+        border: 1px solid #e0e0e0;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Watermark */
+    .invoice-watermark {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 0.06;
+        z-index: 0;
+        pointer-events: none;
+    }
+    .invoice-watermark img {
+        max-width: 300px;
+        max-height: 300px;
+    }
+    @media (min-width: 768px) {
+        .invoice-watermark img {
+            max-width: 400px;
+            max-height: 400px;
+        }
+    }
+    
+    .invoice-page > *:not(.invoice-watermark) {
+        position: relative;
+        z-index: 1;
+    }
+    
+    @media (min-width: 768px) {
+        .invoice-page {
+            padding: 25px 35px;
+            max-width: 800px;
+            margin: 0 auto 1rem;
+        }
+    }
+    
+    /* Header */
+    .invoice-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+    }
+    
+    .company-brand {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 2px;
+    }
+    
+    @media (min-width: 768px) {
+        .company-brand { font-size: 26px; }
+    }
+    
+    .invoice-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #e53935;
+    }
+    
+    @media (min-width: 768px) {
+        .invoice-title { font-size: 28px; }
+    }
+    
+    /* Company Info Row */
+    .info-row {
+        display: table;
+        width: 100%;
+        border-bottom: 1px solid #ccc;
+        padding-bottom: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .info-row .info-left,
+    .info-row .info-right {
+        display: table-cell;
+        vertical-align: top;
+    }
+    
+    .info-row .info-right {
+        text-align: right;
+    }
+    
+    .info-row h6 {
+        font-size: 11px;
+        font-weight: 700;
+        margin: 0 0 3px 0;
+    }
+    
+    .info-row p {
+        margin: 0;
+        line-height: 1.4;
+        font-size: 10px;
+    }
+    
+    /* Meta Info Row */
+    .meta-row {
+        display: table;
+        width: 100%;
+        margin-bottom: 12px;
+    }
+    
+    .meta-item {
+        display: table-cell;
+        width: 25%;
+        padding-right: 10px;
+    }
+    
+    .meta-item .label {
+        font-size: 9px;
+        color: #666;
+        font-weight: 600;
+        display: block;
+    }
+    
+    .meta-item .value {
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .meta-item .value.highlight {
+        color: #e53935;
+    }
+    
+    /* Address Row */
+    .address-row {
+        display: table;
+        width: 100%;
+        margin-bottom: 15px;
+    }
+    
+    .address-block {
+        display: table-cell;
+        width: 50%;
+        vertical-align: top;
+        padding-right: 15px;
+    }
+    
+    .address-block h6 {
+        font-size: 9px;
+        font-weight: 700;
+        margin: 0 0 4px 0;
+        text-transform: uppercase;
+    }
+    
+    .address-block p {
+        margin: 0;
+        line-height: 1.4;
+        font-size: 10px;
+    }
+    
+    /* Items Table */
+    .items-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 12px;
+    }
+    
+    .items-table thead tr {
+        border-top: 2px solid #333;
+        border-bottom: 1px solid #333;
+    }
+    
+    .items-table th {
+        padding: 6px 4px;
+        text-align: left;
+        font-size: 9px;
+        font-weight: 700;
+    }
+    
+    .items-table th.right { text-align: right; }
+    .items-table th.center { text-align: center; }
+    
+    .items-table tbody tr {
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .items-table td {
+        padding: 8px 4px;
+        font-size: 10px;
+    }
+    
+    .items-table td.right { text-align: right; }
+    .items-table td.center { text-align: center; }
+    
+    /* Summary Section */
+    .summary-section {
+        display: table;
+        width: 100%;
+        margin-bottom: 15px;
+    }
+    
+    .summary-left {
+        display: table-cell;
+        width: 55%;
+        vertical-align: top;
+        font-size: 10px;
+    }
+    
+    .summary-left .info-item {
+        margin-bottom: 8px;
+    }
+    
+    .summary-left .info-item strong {
+        display: block;
+        font-size: 9px;
+        margin-bottom: 2px;
+    }
+    
+    .summary-right {
+        display: table-cell;
+        width: 45%;
+        vertical-align: top;
+    }
+    
+    .totals-table {
+        width: 100%;
+    }
+    
+    .totals-table td {
+        padding: 4px 0;
+        font-size: 11px;
+    }
+    
+    .totals-table td:last-child {
+        text-align: right;
+    }
+    
+    .totals-table .total-row td {
+        border-top: 1px solid #333;
+        font-weight: 700;
+        font-size: 13px;
+        padding-top: 6px;
+    }
+    
+    /* Signature Section */
+    .signature-section {
+        display: table;
+        width: 100%;
+        margin: 20px 0;
+    }
+    
+    .signature-block {
+        display: table-cell;
+        width: 50%;
+        vertical-align: top;
+    }
+    
+    .signature-block.right {
+        text-align: right;
+    }
+    
+    .signature-block h6 {
+        font-size: 9px;
+        font-weight: 700;
+        margin: 0 0 4px 0;
+    }
+    
+    .signature-block p {
+        margin: 0;
+        font-size: 10px;
+    }
+    
+    /* Footer Section */
+    .footer-section {
+        display: table;
+        width: 100%;
+        border-top: 1px solid #ccc;
+        padding-top: 12px;
+    }
+    
+    .payment-info {
+        display: table-cell;
+        vertical-align: top;
+    }
+    
+    .payment-info h6 {
+        font-size: 10px;
+        font-weight: 700;
+        margin: 0 0 6px 0;
+    }
+    
+    .payment-info table {
+        font-size: 9px;
+    }
+    
+    .payment-info td {
+        padding: 1px 8px 1px 0;
+    }
+    
+    .payment-info td:first-child {
+        color: #e53935;
+        font-weight: 600;
+    }
+    
+    .qr-section {
+        display: table-cell;
+        text-align: center;
+        vertical-align: top;
+        width: 130px;
+    }
+    
+    .qr-section img {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .qr-section p {
+        font-size: 8px;
+        margin: 4px 0 0 0;
+    }
+    
+    /* Action Bar */
+    .action-bar-container {
+        position: fixed;
+        bottom: 70px;
+        left: 0;
+        right: 0;
+        background: white;
+        padding: 0.75rem 1rem;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        z-index: 100;
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    @media (min-width: 768px) {
+        .action-bar-container {
+            position: static;
+            background: transparent;
+            box-shadow: none;
+            padding: 0;
+            margin-bottom: 1rem;
+            justify-content: flex-start;
+        }
+    }
+    
+    .action-bar-container .btn {
+        flex: 1;
+        min-height: 48px;
+        font-weight: 600;
+        border-radius: 12px;
+    }
+    
+    @media (min-width: 768px) {
+        .action-bar-container .btn {
+            flex: none;
+            padding: 0.5rem 1.5rem;
+        }
+    }
+    
+    .main-content-detail {
+        padding-bottom: 140px;
+    }
+    
+    @media (min-width: 768px) {
+        .main-content-detail { padding-bottom: 90px; }
+    }
+    
+    /* Share Modal */
+    .share-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 9999;
+        align-items: flex-end;
+        justify-content: center;
+    }
+    
+    .share-modal.active {
+        display: flex;
+    }
+    
+    .share-modal-content {
+        background: white;
+        width: 100%;
+        max-width: 500px;
+        border-radius: 20px 20px 0 0;
+        padding: 1.5rem;
+        animation: slideUp 0.3s ease;
+    }
+    
+    @keyframes slideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+    
+    .share-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .share-modal-header h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+    
+    .share-modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        padding: 0.5rem;
+        cursor: pointer;
+        color: var(--text-muted);
+    }
+    
+    .share-options {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .share-option {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 1rem;
+        border-radius: 12px;
+        border: none;
+        background: var(--bg-secondary);
+        cursor: pointer;
+        text-decoration: none;
+        color: var(--text-primary);
+        transition: all 0.2s;
+    }
+    
+    .share-option:hover {
+        background: var(--bg-tertiary);
+        transform: scale(1.05);
+    }
+    
+    .share-option i {
+        font-size: 1.75rem;
+    }
+    
+    .share-option.share i { color: #6366f1; }
+    .share-option.download i { color: #dc2626; }
+    .share-option.share-native i { color: #6366f1; }
+    
+    .share-option span {
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    /* Toast notification */
+    .toast-notification {
+        position: fixed;
+        bottom: 150px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #333;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 50px;
+        font-size: 0.875rem;
+        z-index: 10000;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .toast-notification.show {
+        opacity: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content-detail">
+    <!-- Status Header -->
+    <div class="invoice-status-header no-print">
+        <div class="status-info">
+            <h2>{{ invoice.invoice_number }}</h2>
+            <p>{{ invoice.client.name }}</p>
+        </div>
+        <span class="status-badge status-{{ invoice.get_display_status }}">
+            {% if invoice.get_display_status == 'paid' %}
+            <i class="bi bi-check-circle-fill"></i>
+            {% elif invoice.get_display_status == 'overdue' %}
+            <i class="bi bi-exclamation-circle-fill"></i>
+            {% else %}
+            <i class="bi bi-clock-fill"></i>
+            {% endif %}
+            {{ invoice.get_status_label }}
+        </span>
+    </div>
+    
+    <!-- Action Bar -->
+    <div class="action-bar-container no-print">
+        {% if invoice.get_display_status != 'paid' %}
+        <form method="post" action="{% url 'invoice_mark_paid' invoice.pk %}" style="display: inline;" onsubmit="return confirm('Are you sure you want to mark this invoice as fully paid? This will set the paid amount to ₹{{ invoice.total|floatformat:0 }}.');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-check-circle"></i> Mark Paid
+            </button>
+        </form>
+        {% endif %}
+        <button onclick="openShareModal()" class="btn btn-primary">
+            <i class="bi bi-share"></i> Share
+        </button>
+        <a href="{% url 'invoice_edit' invoice.pk %}" class="btn btn-outline-secondary">
+            <i class="bi bi-pencil"></i>
+        </a>
+    </div>
+
+    <!-- Invoice Page - Matches PDF exactly -->
+    <div class="invoice-page">
+        
+        <!-- Header -->
+        <div class="invoice-header">
+            <div>
+                {% if invoice.company.logo %}
+                <img src="{{ invoice.company.logo.url }}" alt="{{ invoice.company.name }}" style="width: 50px; height: 50px; object-fit: contain;">
+                {% else %}
+                <div class="company-brand">{{ invoice.company.name|upper }}</div>
+                {% endif %}
+            </div>
+            <div class="invoice-title">INVOICE</div>
+        </div>
+        
+        <!-- Company Info Row -->
+        <div class="info-row">
+            <div class="info-left">
+                <h6>{{ invoice.company.name }}</h6>
+                <p>
+                    {{ invoice.company.address }}<br>
+                    {% if invoice.company.city %}{{ invoice.company.city }}{% endif %}{% if invoice.company.state %}, {{ invoice.company.state }}{% endif %} - {{ invoice.company.postal_code }}<br>
+                    {{ invoice.company.country|default:"India" }}
+                </p>
+            </div>
+            <div class="info-right">
+                <h6>Contact</h6>
+                <p>
+                    {% if invoice.company.website %}{{ invoice.company.website }}<br>{% endif %}
+                    {% if invoice.company.phone %}{{ invoice.company.phone }}<br>{% endif %}
+                    {% if invoice.company.email %}{{ invoice.company.email }}{% endif %}
+                </p>
+            </div>
+        </div>
+        
+        <!-- Meta Info Row -->
+        <div class="meta-row">
+            <div class="meta-item">
+                <span class="label">Due Amount</span>
+                <span class="value highlight">₹ {{ invoice.get_balance_due|indian_currency }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="label">Due Date</span>
+                <span class="value">{{ invoice.due_date|date:"d M, Y" }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="label">Invoice #</span>
+                <span class="value">{{ invoice.invoice_number }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="label">Invoice Date</span>
+                <span class="value">{{ invoice.invoice_date|date:"d M, Y" }}</span>
+            </div>
+        </div>
+        
+        <!-- Address Row -->
+        <div class="address-row">
+            <div class="address-block">
+                <h6>Invoice To</h6>
+                <p>
+                    <strong>{{ invoice.client.name }}</strong><br>
+                    {{ invoice.client.billing_address }}<br>
+                    {% if invoice.client.billing_city %}{{ invoice.client.billing_city }}{% endif %}{% if invoice.client.billing_state %}, {{ invoice.client.billing_state }}{% endif %} {{ invoice.client.billing_postal_code }}<br>
+                    {{ invoice.client.billing_country|default:"" }}
+                </p>
+            </div>
+            <div class="address-block">
+                <h6>Shipped To</h6>
+                <p>
+                    <strong>{{ invoice.client.name }}</strong><br>
+                    {% if invoice.client.shipping_address %}
+                    {{ invoice.client.shipping_address }}<br>
+                    {% if invoice.client.shipping_city %}{{ invoice.client.shipping_city }}{% endif %}{% if invoice.client.shipping_state %}, {{ invoice.client.shipping_state }}{% endif %} {{ invoice.client.shipping_postal_code }}<br>
+                    {% else %}
+                    {{ invoice.client.billing_address }}<br>
+                    {% if invoice.client.billing_city %}{{ invoice.client.billing_city }}{% endif %}{% if invoice.client.billing_state %}, {{ invoice.client.billing_state }}{% endif %} {{ invoice.client.billing_postal_code }}<br>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        
+        <!-- Items Table -->
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 25px;">#</th>
+                    <th>Desc. of Goods/Services</th>
+                    <th class="center" style="width: 55px;">Unit</th>
+                    <th class="center" style="width: 50px;">Qty.</th>
+                    <th class="right" style="width: 70px;">Rate (₹)</th>
+                    <th class="center" style="width: 40px;">Dis.</th>
+                    <th class="center" style="width: 40px;">GST</th>
+                    <th class="right" style="width: 70px;">Total (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in invoice.items.all %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ item.description }}</td>
+                    <td class="center">{{ item.get_unit_type_display }}</td>
+                    <td class="center">{{ item.quantity|floatformat:2 }}</td>
+                    <td class="right">{{ item.rate|indian_currency }}</td>
+                    <td class="center">{{ item.discount|floatformat:0 }}</td>
+                    <td class="center">{{ item.tax_rate|floatformat:0 }}</td>
+                    <td class="right">{{ item.amount|indian_currency }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- Summary Section -->
+        <div class="summary-section">
+            <div class="summary-left">
+                <div class="info-item">
+                    <strong>Payment Method</strong>
+                    {{ payment_info.payment_method|default:"Cash" }}
+                </div>
+                <div class="info-item">
+                    <strong>In Words</strong>
+                    {{ invoice.get_amount_in_words }}
+                </div>
+            </div>
+            <div class="summary-right">
+                <table class="totals-table">
+                    <tr>
+                        <td>Sub Total</td>
+                        <td>₹ {{ invoice.subtotal|indian_currency }}</td>
+                    </tr>
+                    <tr>
+                        <td>GST</td>
+                        <td>₹ {{ invoice.tax_amount|indian_currency }}</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td>Total</td>
+                        <td>₹ {{ invoice.total|indian_currency }}</td>
+                    </tr>
+                    <tr>
+                        <td>Balance Due</td>
+                        <td>₹ {{ invoice.get_balance_due|indian_currency }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Signature Section -->
+        <div class="signature-section">
+            <div class="signature-block">
+                <h6>Accepted By</h6>
+                <p>{{ invoice.client.name }}</p>
+            </div>
+            <div class="signature-block right">
+                <h6>Signature</h6>
+                <p>{{ invoice.company.name }}</p>
+            </div>
+        </div>
+        
+        <!-- Footer Section -->
+        <div class="footer-section">
+            <div class="payment-info">
+                <h6>Payment Info</h6>
+                <table>
+                    {% if invoice.company.account_number %}
+                    <tr>
+                        <td>Ac #</td>
+                        <td>{{ invoice.company.account_number }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <td>Ac Name</td>
+                        <td>{{ invoice.company.name }}</td>
+                    </tr>
+                    {% if invoice.company.ifsc_code %}
+                    <tr>
+                        <td>IFSCode</td>
+                        <td>{{ invoice.company.ifsc_code }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if invoice.company.bank_name %}
+                    <tr>
+                        <td>Bank</td>
+                        <td>{{ invoice.company.bank_name }}{% if invoice.company.bank_branch %},<br>{{ invoice.company.bank_branch }}{% endif %}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+            {% if invoice.qr_code %}
+            <div class="qr-section">
+                <img src="{{ invoice.qr_code.url }}" alt="Payment QR Code">
+                <p><strong>Name:</strong> {{ invoice.company.name }}<br>
+                <strong>UPI:</strong> {{ invoice.company.upi_id }}</p>
+            </div>
+            {% endif %}
+        </div>
+        
+    </div>
+
+    <!-- Payments / Advances Section (Separate from Invoice) -->
+    <div class="payments-section no-print" style="background: white; border-radius: 16px; padding: 1.25rem; margin-top: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 style="margin: 0; font-weight: 600;"><i class="bi bi-cash-stack text-success"></i> Payments / Advances</h5>
+            <a href="{% url 'payment_create' invoice.pk %}" class="btn btn-primary btn-sm" style="border-radius: 8px;">
+                <i class="bi bi-plus"></i> Add Payment
+            </a>
+        </div>
+        
+        {% if payments %}
+        <div class="table-responsive">
+            <table class="table table-hover" style="font-size: 14px;">
+                <thead style="background: #f8f9fa;">
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Method</th>
+                        <th>Reference</th>
+                        <th class="text-end">Amount</th>
+                        <th class="text-center">Receipt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in payments %}
+                    <tr>
+                        <td>{{ p.paid_on|date:"d M, Y" }}</td>
+                        <td>
+                            {% if p.is_advance %}
+                            <span class="badge bg-info">Advance</span>
+                            {% else %}
+                            <span class="badge bg-success">Payment</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ p.get_method_display }}</td>
+                        <td>{{ p.reference|default:"-" }}</td>
+                        <td class="text-end fw-bold">₹ {{ p.amount|indian_currency }}</td>
+                        <td class="text-center">
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'payment_receipt_pdf' p.pk %}" target="_blank" class="btn btn-outline-primary btn-sm" title="View Receipt">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'payment_receipt_pdf' p.pk %}?download=1" class="btn btn-outline-success btn-sm" title="Download Receipt">
+                                    <i class="bi bi-download"></i>
+                                </a>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" title="Share Receipt" onclick="shareReceipt({{ p.pk }})">
+                                    <i class="bi bi-share"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot style="background: #f8f9fa; font-weight: 600;">
+                    <tr>
+                        <td colspan="4" class="text-end">Total Paid:</td>
+                        <td class="text-end text-success">₹ {{ invoice.amount_paid|indian_currency }}</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" class="text-end">Balance Due:</td>
+                        <td class="text-end {% if invoice.get_balance_due > 0 %}text-danger{% else %}text-success{% endif %}">₹ {{ invoice.get_balance_due|indian_currency }}</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted">
+            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+            <p class="mb-2">No payments recorded yet.</p>
+            <a href="{% url 'payment_create' invoice.pk %}" class="btn btn-primary">
+                <i class="bi bi-plus"></i> Record First Payment
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Share Modal -->
+<div class="share-modal no-print" id="shareModal">
+    <div class="share-modal-content">
+        <div class="share-modal-header">
+            <h3>Share Invoice PDF</h3>
+            <button class="share-modal-close" onclick="closeShareModal()">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="share-options">
+            <button onclick="shareInvoice()" class="share-option share">
+                <i class="bi bi-share"></i>
+                <span>Share</span>
+            </button>
+            <button onclick="shareNative()" class="share-option share-native" id="nativeShareBtn">
+                <i class="bi bi-share"></i>
+                <span>Share PDF</span>
+            </button>
+            <a href="{% url 'invoice_pdf' invoice.pk %}?download=1" class="share-option download">
+                <i class="bi bi-download"></i>
+                <span>Download</span>
+            </a>
+        </div>
+        <button onclick="closeShareModal()" class="btn btn-outline-secondary w-100" style="min-height: 48px;">
+            Cancel
+        </button>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast-notification" id="toast">Downloading PDF...</div>
+
+<script>
+const pdfUrl = '{% url "invoice_pdf" invoice.pk %}';
+const pdfDownloadUrl = '{% url "invoice_pdf" invoice.pk %}?download=1';
+const invoiceNumber = '{{ invoice.invoice_number }}';
+const invoiceTotal = '₹{{ invoice.total|floatformat:0 }}';
+const dueDate = '{{ invoice.due_date|date:"d M Y" }}';
+
+function openShareModal() {
+    document.getElementById('shareModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+    
+    // Check if native share is supported
+    if (!navigator.share) {
+        document.getElementById('nativeShareBtn').style.display = 'none';
+    }
+}
+
+function closeShareModal() {
+    document.getElementById('shareModal').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// Share Invoice PDF
+async function shareInvoice() {
+    showToast('Preparing PDF for sharing...');
+    closeShareModal();
+    
+    try {
+        // Fetch the PDF
+        const response = await fetch(pdfDownloadUrl);
+        const blob = await response.blob();
+        const file = new File([blob], `invoice_${invoiceNumber}.pdf`, { type: 'application/pdf' });
+        
+        // Check if native share with files is supported (iOS/Android)
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                files: [file],
+                title: `Invoice ${invoiceNumber}`,
+                text: `Invoice ${invoiceNumber}\nAmount: ${invoiceTotal}\nDue Date: ${dueDate}`
+            });
+            showToast('Shared successfully!');
+        } else {
+            // Fallback: Download PDF and show instructions
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `invoice_${invoiceNumber}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showToast('PDF downloaded! You can share it from your files.');
+        }
+    } catch (error) {
+        console.error('Error sharing:', error);
+        // Fallback to direct download
+        window.location.href = pdfDownloadUrl;
+        showToast('PDF downloading...');
+    }
+}
+
+// Native share (for mobile devices)
+async function shareNative() {
+    showToast('Preparing PDF...');
+    closeShareModal();
+    
+    try {
+        const response = await fetch(pdfDownloadUrl);
+        const blob = await response.blob();
+        const file = new File([blob], `invoice_${invoiceNumber}.pdf`, { type: 'application/pdf' });
+        
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                files: [file],
+                title: `Invoice ${invoiceNumber}`,
+                text: `Invoice ${invoiceNumber}\nAmount: ${invoiceTotal}\nDue Date: ${dueDate}`
+            });
+            showToast('Shared successfully!');
+        } else {
+            // Fallback for browsers that don't support file sharing
+            await navigator.share({
+                title: `Invoice ${invoiceNumber}`,
+                text: `Invoice ${invoiceNumber}\nAmount: ${invoiceTotal}\nDue Date: ${dueDate}`,
+                url: window.location.origin + pdfUrl
+            });
+        }
+    } catch (error) {
+        if (error.name !== 'AbortError') {
+            console.error('Share failed:', error);
+            showToast('Could not share. Try downloading instead.');
+        }
+    }
+}
+
+// Close modal on background click
+document.getElementById('shareModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeShareModal();
+    }
+});
+
+// Close on escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeShareModal();
+    }
+});
+
+// Share Receipt (saves to device, then share from there)
+async function shareReceipt(paymentId) {
+    showToast('Preparing receipt...');
+    
+    const receiptUrl = `/payments/${paymentId}/receipt/?download=1`;
+    
+    try {
+        const response = await fetch(receiptUrl);
+        if (!response.ok) {
+            throw new Error('Failed to fetch receipt');
+        }
+        const blob = await response.blob();
+        const fileName = `receipt_${invoiceNumber}_${paymentId}.pdf`;
+        const file = new File([blob], fileName, { type: 'application/pdf' });
+        
+        // Check if Web Share API with files is supported
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: `Payment Receipt - ${invoiceNumber}`,
+                    text: `Payment Receipt for Invoice ${invoiceNumber}`
+                });
+                showToast('Receipt shared successfully!');
+                return;
+            } catch (shareError) {
+                if (shareError.name === 'AbortError') {
+                    return; // User cancelled
+                }
+                console.log('File share failed, trying fallback...');
+            }
+        }
+        
+        // Check if basic Web Share API is supported (without files)
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: `Payment Receipt - ${invoiceNumber}`,
+                    text: `Payment Receipt for Invoice ${invoiceNumber}`,
+                    url: window.location.origin + `/payments/${paymentId}/receipt/`
+                });
+                showToast('Link shared!');
+                return;
+            } catch (shareError) {
+                if (shareError.name === 'AbortError') {
+                    return; // User cancelled
+                }
+                console.log('Link share failed, downloading instead...');
+            }
+        }
+        
+        // Fallback: Download the file directly
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 100);
+        
+        showToast('Receipt downloaded! Share it from your files.');
+        
+    } catch (error) {
+        console.error('Error sharing receipt:', error);
+        // Last resort: redirect to download
+        window.location.href = receiptUrl;
+        showToast('Downloading receipt...');
+    }
+}
+</script>
+{% endblock %}

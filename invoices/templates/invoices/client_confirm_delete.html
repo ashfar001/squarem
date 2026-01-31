@@ -1,0 +1,36 @@
+{% extends 'invoices/base.html' %}
+
+{% block title %}Delete Client{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Confirm Delete</h5>
+                </div>
+                <div class="card-body">
+                    <p>Are you sure you want to delete the following client?</p>
+                    <div class="alert alert-warning">
+                        <strong>Name:</strong> {{ client.name }}<br>
+                        {% if client.company_name %}<strong>Company:</strong> {{ client.company_name }}<br>{% endif %}
+                        <strong>Email:</strong> {{ client.email|default:"-" }}
+                    </div>
+                    <p class="text-danger"><strong>This will also delete all invoices associated with this client!</strong></p>
+                    
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <a href="{% url 'client_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Yes, Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

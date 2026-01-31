@@ -1,0 +1,155 @@
+{% extends 'invoices/base.html' %}
+
+{% block title %}{{ action }} Company{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="bi bi-building"></i> {{ action }} Company</h2>
+        </div>
+        <div class="col text-end">
+            <a href="{% url 'company_list' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <!-- Basic Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Basic Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ form.name.label_tag }}
+                        {{ form.name }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.logo.label_tag }}
+                        {{ form.logo }}
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        {{ form.email.label_tag }}
+                        {{ form.email }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.phone.label_tag }}
+                        {{ form.phone }}
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        {{ form.website.label_tag }}
+                        {{ form.website }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Address -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Address</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        {{ form.address.label_tag }}
+                        {{ form.address }}
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-3">
+                        {{ form.city.label_tag }}
+                        {{ form.city }}
+                    </div>
+                    <div class="col-md-3">
+                        {{ form.state.label_tag }}
+                        {{ form.state }}
+                    </div>
+                    <div class="col-md-3">
+                        {{ form.postal_code.label_tag }}
+                        {{ form.postal_code }}
+                    </div>
+                    <div class="col-md-3">
+                        {{ form.country.label_tag }}
+                        {{ form.country }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bank Details -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Bank Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ form.bank_name.label_tag }}
+                        {{ form.bank_name }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.bank_branch.label_tag }}
+                        {{ form.bank_branch }}
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        {{ form.account_number.label_tag }}
+                        {{ form.account_number }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.ifsc_code.label_tag }}
+                        {{ form.ifsc_code }}
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        {{ form.upi_id.label_tag }}
+                        {{ form.upi_id }}
+                        <small class="form-text text-muted">QR code will be auto-generated for invoices</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tax Details -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Tax Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ form.gstin.label_tag }}
+                        {{ form.gstin }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.pan.label_tag }}
+                        {{ form.pan }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit -->
+        <div class="text-end mb-4">
+            <a href="{% url 'company_list' %}" class="btn btn-secondary">
+                <i class="bi bi-x-circle"></i> Cancel
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save"></i> Save Company
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

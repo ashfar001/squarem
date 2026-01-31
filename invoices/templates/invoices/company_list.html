@@ -1,0 +1,71 @@
+{% extends 'invoices/base.html' %}
+
+{% block title %}Companies{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="bi bi-building"></i> Companies</h2>
+        </div>
+        <div class="col text-end">
+            <a href="{% url 'company_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Add Company
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        {% if companies %}
+        {% for company in companies %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            {% if company.logo %}
+                            <img src="{{ company.logo.url }}" alt="{{ company.name }}" style="max-width: 80px; margin-bottom: 10px;">
+                            {% endif %}
+                            <h5 class="card-title">{{ company.name }}</h5>
+                        </div>
+                        <div>
+                            <a href="{% url 'company_edit' company.pk %}" class="btn btn-sm btn-outline-warning">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'company_delete' company.pk %}" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted">
+                        {{ company.address }}<br>
+                        {% if company.city %}{{ company.city }}, {% endif %}
+                        {% if company.state %}{{ company.state }} {% endif %}
+                        {{ company.postal_code }}<br>
+                        {% if company.phone %}<i class="bi bi-telephone"></i> {{ company.phone }}<br>{% endif %}
+                        {% if company.email %}<i class="bi bi-envelope"></i> {{ company.email }}<br>{% endif %}
+                        {% if company.gstin %}<strong>GSTIN:</strong> {{ company.gstin }}<br>{% endif %}
+                    </p>
+                    {% if company.upi_id %}
+                    <small class="text-success"><i class="bi bi-check-circle"></i> UPI Enabled</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-building" style="font-size: 3rem; color: #ccc;"></i>
+                    <p class="text-muted mt-3">No companies yet.</p>
+                    <a href="{% url 'company_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Add First Company
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

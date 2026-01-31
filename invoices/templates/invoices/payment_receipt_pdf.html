@@ -1,0 +1,172 @@
+{% load invoice_filters %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Receipt {{ payment.pk }} - {{ invoice.invoice_number }}</title>
+    <style>
+        @page { 
+            size: A4; 
+            margin: 12mm;
+            @frame watermark {
+                -pdf-frame-content: watermark-content;
+                top: 200px;
+                left: 100px;
+                width: 400px;
+                height: 400px;
+            }
+        }
+        body { font-family: Helvetica, Arial, sans-serif; color: #333; font-size: 11px; margin: 0; padding: 0; }
+        .container { padding: 12px 18px; position: relative; z-index: 1; }
+        .header-table { width: 100%; margin-bottom: 12px; }
+        .header-table td { vertical-align: middle; }
+        .header-logo { width: 150px; height: 150px; }
+        .brand { font-size: 22px; font-weight: 700; letter-spacing: 1px; }
+        .title { font-size: 20px; font-weight: 700; color: #e53935; text-align: right; }
+        .section { border: 1px solid #e0e0e0; padding: 10px 12px; margin-bottom: 10px; }
+        .row-table { width: 100%; }
+        .row-table td { width: 50%; vertical-align: top; }
+        h6 { margin: 0 0 4px 0; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+        p { margin: 0; line-height: 1.4; }
+        table { width: 100%; border-collapse: collapse; }
+        .items-table { margin-top: 8px; }
+        .items-table th, .items-table td { padding: 6px 4px; font-size: 10px; text-align: left; }
+        .items-table th { background: #f7f7f7; font-weight: 700; }
+        .totals td { font-size: 11px; padding: 4px 0; }
+        .totals .label { color: #555; }
+        .totals .value { text-align: right; font-weight: 700; }
+        .footer { margin-top: 16px; font-size: 9px; color: #666; text-align: center; }
+        
+        /* Watermark */
+    .invoice-watermark {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 0.06;
+        z-index: 0;
+        pointer-events: none;
+    }
+    .invoice-watermark img {
+        max-width: 300px;
+        max-height: 300px;
+    }
+    @media (min-width: 768px) {
+        .invoice-watermark img {
+            max-width: 400px;
+            max-height: 400px;
+        }
+    }
+    </style>
+</head>
+<body>
+<!-- Watermark Frame Content -->
+ {% if invoice.company.logo %}
+        <div class="invoice-watermark">
+            <img src="{{ invoice.company.logo.url }}" alt="">
+        </div>
+    {% endif %}
+        
+
+<div class="container">
+    <!-- Header -->
+    <table class="header-table">
+        <tr>
+            <td style="width: 60%;">
+                {% if invoice.company.logo %}
+                <img src="{{ invoice.company.logo.path }}" alt="{{ invoice.company.name }}" class="header-logo">
+                {% else %}
+                <div class="brand">{{ invoice.company.name|upper }}</div>
+                {% endif %}
+            </td>
+            <td style="width: 40%;">
+                <div class="title">PAYMENT RECEIPT</div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Receipt and Invoice Details -->
+    <div class="section">
+        <table class="row-table">
+            <tr>
+                <td>
+                    <h6>Receipt Details</h6>
+                    <p>
+                        Receipt #: {{ payment.pk }}<br>
+                        Date: {{ payment.paid_on|date:"d M, Y" }}<br>
+                        Method: {{ payment.get_method_display }}<br>
+                        {% if payment.reference %}Ref: {{ payment.reference }}<br>{% endif %}
+                        {% if payment.is_advance %}Type: Advance{% else %}Type: Payment{% endif %}
+                    </p>
+                </td>
+                <td>
+                    <h6>Invoice</h6>
+                    <p>
+                        Invoice #: {{ invoice.invoice_number }}<br>
+                        Invoice Date: {{ invoice.invoice_date|date:"d M, Y" }}<br>
+                        Client: {{ invoice.client.name }}
+                    </p>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Bill To -->
+    <div class="section">
+        <h6>Bill To</h6>
+        <p>
+            <strong>{{ invoice.client.name }}</strong><br>
+            {{ invoice.client.billing_address }}<br>
+            {% if invoice.client.billing_city %}{{ invoice.client.billing_city }}{% endif %}{% if invoice.client.billing_state %}, {{ invoice.client.billing_state }}{% endif %} {{ invoice.client.billing_postal_code }}
+        </p>
+    </div>
+
+    <!-- Amount Table -->
+    <div class="section">
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th style="width: 120px; text-align: right;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{% if payment.is_advance %}Advance{% else %}Payment{% endif %} towards {{ invoice.invoice_number }}</td>
+                    <td style="text-align: right;">Rs. {{ payment.amount|indian_currency }}/-</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Totals -->
+    <div class="section">
+        <table class="totals">
+            <tr>
+                <td class="label">Invoice Total</td>
+                <td class="value">Rs. {{ invoice.total|indian_currency }}/-</td>
+            </tr>
+            <tr>
+                <td class="label">Total Paid (incl. this)</td>
+                <td class="value">Rs. {{ invoice.amount_paid|indian_currency }}/-</td>
+            </tr>
+            <tr>
+                <td class="label">Balance Due</td>
+                <td class="value">Rs. {{ invoice.get_balance_due|indian_currency }}/-</td>
+            </tr>
+        </table>
+    </div>
+
+    {% if payment.note %}
+    <div class="section">
+        <h6>Note</h6>
+        <p>{{ payment.note }}</p>
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        This is a computer-generated receipt. Thank you for your payment.
+    </div>
+</div>
+</body>
+</html>

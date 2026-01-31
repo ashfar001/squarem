@@ -1,0 +1,105 @@
+{% extends 'invoices/base.html' %}
+
+{% block title %}Clients - Squarem Invoice{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="mb-4">
+    <h1 class="page-title">Clients</h1>
+    <p class="page-subtitle">Manage your clients</p>
+</div>
+
+<!-- Client Cards - Mobile Optimized -->
+{% if clients %}
+<div class="client-list">
+    {% for client in clients %}
+    <div class="card mb-3">
+        <div class="card-body py-3">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div class="client-avatar">
+                            {{ client.name|slice:":1"|upper }}
+                        </div>
+                        <div>
+                            <h6 class="mb-0" style="font-weight: 600;">{{ client.name }}</h6>
+                            {% if client.company_name %}
+                            <small class="text-muted">{{ client.company_name }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex flex-wrap gap-3 mt-2">
+                        {% if client.phone %}
+                        <a href="tel:{{ client.phone }}" class="text-decoration-none text-muted small">
+                            <i class="bi bi-telephone"></i> {{ client.phone }}
+                        </a>
+                        {% endif %}
+                        {% if client.email %}
+                        <a href="mailto:{{ client.email }}" class="text-decoration-none text-muted small">
+                            <i class="bi bi-envelope"></i> {{ client.email }}
+                        </a>
+                        {% endif %}
+                        {% if client.billing_city %}
+                        <span class="text-muted small">
+                            <i class="bi bi-geo-alt"></i> {{ client.billing_city }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-link text-muted p-0" data-bs-toggle="dropdown">
+                        <i class="bi bi-three-dots-vertical fs-5"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item" href="{% url 'client_edit' client.pk %}">
+                                <i class="bi bi-pencil me-2"></i> Edit
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'invoice_create' %}?client={{ client.pk }}">
+                                <i class="bi bi-receipt me-2"></i> New Invoice
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item text-danger" href="{% url 'client_delete' client.pk %}">
+                                <i class="bi bi-trash me-2"></i> Delete
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<!-- Empty State -->
+<div class="empty-state">
+    <i class="bi bi-people"></i>
+    <h3>No clients yet</h3>
+    <p>Add your first client to start creating invoices</p>
+    <a href="{% url 'client_create' %}" class="btn btn-primary btn-lg">
+        <i class="bi bi-plus-circle"></i> Add Client
+    </a>
+</div>
+{% endif %}
+
+<style>
+.client-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-primary) 0%, #8b5cf6 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1rem;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>{% block title %}Squarem Invoice{% endblock %}</title>
+    
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    {% load static %}
+    
+    <style>
+        /* ===== MOBILE-FIRST BASE STYLES ===== */
+        :root {
+            --bg-primary: #f8f9fa;
+            --bg-card: #ffffff;
+            --text-primary: #1a1a2e;
+            --text-secondary: #6c757d;
+            --accent-primary: #4361ee;
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --accent-danger: #ef4444;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --nav-height: 70px;
+            --header-height: 60px;
+        }
+        
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            padding-bottom: calc(var(--nav-height) + 20px);
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* ===== TOP HEADER (Mobile) ===== */
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--text-primary);
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .app-header .brand {
+            font-weight: 700;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .app-header .brand i {
+            font-size: 22px;
+            color: var(--accent-primary);
+        }
+        
+        .app-header .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .app-header .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        /* ===== BOTTOM NAVIGATION ===== */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+            padding: 8px 0;
+            padding-bottom: max(8px, env(safe-area-inset-bottom));
+        }
+        
+        .bottom-nav-inner {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: var(--text-secondary);
+            padding: 6px 16px;
+            border-radius: var(--radius-md);
+            transition: all 0.2s ease;
+            min-width: 60px;
+        }
+        
+        .nav-item i {
+            font-size: 22px;
+            margin-bottom: 2px;
+        }
+        
+        .nav-item span {
+            font-size: 10px;
+            font-weight: 500;
+        }
+        
+        .nav-item.active {
+            color: var(--accent-primary);
+            background: rgba(67, 97, 238, 0.1);
+        }
+        
+        .nav-item.create-btn {
+            background: var(--accent-primary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+        }
+        
+        .nav-item.create-btn i {
+            font-size: 24px;
+            margin-bottom: 0;
+        }
+        
+        .nav-item.create-btn span {
+            display: none;
+        }
+        
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            padding: 16px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        /* ===== CARDS ===== */
+        .card {
+            background: var(--bg-card);
+            border: none;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+        
+        .card-body {
+            padding: 16px;
+        }
+        
+        /* ===== STATUS BADGES ===== */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-paid {
+            background: rgba(16, 185, 129, 0.15);
+            color: #059669;
+        }
+        
+        .status-unpaid {
+            background: rgba(245, 158, 11, 0.15);
+            color: #d97706;
+        }
+        
+        .status-overdue {
+            background: rgba(239, 68, 68, 0.15);
+            color: #dc2626;
+        }
+        
+        /* ===== BUTTONS ===== */
+        .btn {
+            font-weight: 500;
+            border-radius: var(--radius-md);
+            padding: 10px 20px;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+        
+        .btn-lg {
+            padding: 14px 28px;
+            font-size: 16px;
+            border-radius: var(--radius-lg);
+        }
+        
+        /* Large touch targets */
+        .btn-touch {
+            min-height: 48px;
+            min-width: 48px;
+        }
+        
+        /* ===== FORMS ===== */
+        .form-control, .form-select {
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            border: 1px solid #e5e7eb;
+            font-size: 16px; /* Prevents zoom on iOS */
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+        }
+        
+        /* ===== ALERTS ===== */
+        .alert {
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+        }
+        
+        /* ===== TABLES ===== */
+        .table {
+            font-size: 14px;
+        }
+        
+        /* ===== HIDE ON PRINT ===== */
+        @media print {
+            .bottom-nav,
+            .app-header,
+            .no-print {
+                display: none !important;
+            }
+            body {
+                padding-bottom: 0;
+            }
+        }
+        
+        /* ===== RESPONSIVE ADJUSTMENTS ===== */
+        @media (min-width: 768px) {
+            .main-content {
+                padding: 24px;
+            }
+            
+            .bottom-nav {
+                padding: 12px 0;
+            }
+            
+            .nav-item {
+                padding: 8px 24px;
+            }
+            
+            .nav-item.create-btn span {
+                display: block;
+            }
+        }
+        
+        @media (min-width: 992px) {
+            .bottom-nav-inner {
+                max-width: 600px;
+            }
+        }
+        
+        /* ===== INVOICE CARDS (Mobile) ===== */
+        .invoice-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
+        }
+        
+        .invoice-card:active {
+            transform: scale(0.98);
+        }
+        
+        .invoice-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .invoice-number {
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--text-primary);
+        }
+        
+        .invoice-client {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+        
+        .invoice-card-body {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        
+        .invoice-amount {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .invoice-date {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        /* ===== STAT CARDS ===== */
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .stat-card.primary {
+            background: linear-gradient(135deg, #4361ee 0%, #3730a3 100%);
+            color: white;
+        }
+        
+        .stat-card.success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        
+        .stat-card.warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+        
+        .stat-card.danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+        
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 8px 0 4px;
+        }
+        
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        
+        /* ===== SHARE BUTTONS ===== */
+        .share-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border-radius: var(--radius-lg);
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            min-height: 48px;
+        }
+        
+        .share-btn-whatsapp {
+            background: #25D366;
+            color: white;
+        }
+        
+        .share-btn-whatsapp:hover {
+            background: #1da851;
+            color: white;
+        }
+        
+        .share-btn-copy {
+            background: var(--text-primary);
+            color: white;
+        }
+        
+        .share-btn-email {
+            background: #ea4335;
+            color: white;
+        }
+        
+        .share-btn-email:hover {
+            background: #d33426;
+            color: white;
+        }
+        
+        /* ===== ACTION BAR (Bottom sticky) ===== */
+        .action-bar {
+            position: fixed;
+            bottom: calc(var(--nav-height) + 10px);
+            left: 16px;
+            right: 16px;
+            z-index: 99;
+            background: var(--bg-card);
+            border-radius: var(--radius-xl);
+            padding: 12px 16px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+        
+        @media (min-width: 768px) {
+            .action-bar {
+                left: 50%;
+                transform: translateX(-50%);
+                max-width: 500px;
+                right: auto;
+            }
+        }
+        
+        /* ===== PAGE TITLES ===== */
+        .page-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .empty-state i {
+            font-size: 64px;
+            color: #e5e7eb;
+            margin-bottom: 16px;
+        }
+        
+        .empty-state h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        
+        .empty-state p {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- App Header -->
+    <header class="app-header no-print">
+        <div class="brand">
+            <i class="bi bi-receipt"></i>
+            <span>Squarem</span>
+        </div>
+        <div class="user-menu">
+            {% if user.is_authenticated %}
+            <a href="{% url 'logout' %}" class="text-white text-decoration-none" title="Logout">
+                <i class="bi bi-box-arrow-right" style="font-size: 20px;"></i>
+            </a>
+            <div class="user-avatar">{{ user.username|slice:":1"|upper }}</div>
+            {% else %}
+            <a href="{% url 'login' %}" class="text-white text-decoration-none" title="Login">
+                <i class="bi bi-box-arrow-in-right" style="font-size: 20px;"></i>
+            </a>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="main-content" style="padding-bottom: 0;">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav no-print">
+        <div class="bottom-nav-inner">
+            <a href="{% url 'dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'invoice_list' %}" class="nav-item {% if 'invoice' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="bi bi-receipt"></i>
+                <span>Invoices</span>
+            </a>
+            <a href="{% url 'invoice_create' %}" class="nav-item create-btn">
+                <i class="bi bi-plus-lg"></i>
+                <span>Create</span>
+            </a>
+            <a href="{% url 'client_list' %}" class="nav-item {% if 'client' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="bi bi-people-fill"></i>
+                <span>Clients</span>
+            </a>
+            <a href="{% url 'company_list' %}" class="nav-item {% if 'company' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="bi bi-gear-fill"></i>
+                <span>Settings</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Copy to clipboard utility -->
+    <script>
+    function copyToClipboard(text, btn) {
+        navigator.clipboard.writeText(text).then(function() {
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check2"></i> Copied!';
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+            }, 2000);
+        });
+    }
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

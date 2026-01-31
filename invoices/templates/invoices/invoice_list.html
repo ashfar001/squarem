@@ -1,0 +1,141 @@
+{% extends 'invoices/base.html' %}
+{% load humanize %}
+
+{% block title %}Invoices - Squarem Invoice{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="mb-4">
+    <h1 class="page-title">Invoices</h1>
+    <p class="page-subtitle">Manage all your invoices</p>
+</div>
+
+<!-- Search & Filter -->
+<div class="card mb-4">
+    <div class="card-body py-3">
+        <form method="get">
+            <div class="row g-2">
+                <div class="col-12 col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="bi bi-search text-muted"></i>
+                        </span>
+                        <input type="text" name="q" class="form-control border-start-0" 
+                               placeholder="Search invoices..." 
+                               value="{{ request.GET.q }}"
+                               style="min-height: 48px;">
+                    </div>
+                </div>
+                <div class="col-8 col-md-4">
+                    <select name="status" class="form-select" style="min-height: 48px;">
+                        <option value="">All Status</option>
+                        <option value="paid" {% if request.GET.status == 'paid' %}selected{% endif %}>✓ Paid</option>
+                        <option value="sent" {% if request.GET.status == 'sent' %}selected{% endif %}>📤 Sent</option>
+                        <option value="draft" {% if request.GET.status == 'draft' %}selected{% endif %}>📝 Draft</option>
+                        <option value="overdue" {% if request.GET.status == 'overdue' %}selected{% endif %}>⚠ Overdue</option>
+                    </select>
+                </div>
+                <div class="col-4 col-md-2">
+                    <button type="submit" class="btn btn-primary w-100" style="min-height: 48px;">
+                        <i class="bi bi-funnel"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Invoice Cards - Mobile Optimized -->
+{% if invoices %}
+<div class="invoice-list">
+    {% for invoice in invoices %}
+    <a href="{% url 'invoice_detail' invoice.pk %}" class="text-decoration-none">
+        <div class="invoice-card">
+            <div class="invoice-card-header">
+                <div>
+                    <div class="invoice-number">{{ invoice.invoice_number }}</div>
+                    <div class="invoice-client">{{ invoice.client.name }}</div>
+                </div>
+                <span class="status-badge status-{{ invoice.get_display_status }}">
+                    {% if invoice.get_display_status == 'paid' %}
+                    <i class="bi bi-check-circle-fill"></i>
+                    {% elif invoice.get_display_status == 'overdue' %}
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                    {% else %}
+                    <i class="bi bi-clock-fill"></i>
+                    {% endif %}
+                    {{ invoice.get_status_label }}
+                </span>
+            </div>
+            <div class="invoice-card-body">
+                <div>
+                    <div class="invoice-amount">₹{{ invoice.total|floatformat:0|intcomma }}</div>
+                    {% if invoice.get_balance_due > 0 and invoice.get_display_status != 'paid' %}
+                    <div class="invoice-balance text-danger">
+                        <small>Due: ₹{{ invoice.get_balance_due|floatformat:0|intcomma }}</small>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="text-end">
+                    <div class="invoice-date">{{ invoice.invoice_date|date:"d M, Y" }}</div>
+                    <div class="text-muted small">Due: {{ invoice.due_date|date:"d M" }}</div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="invoice-card-footer">
+                <span class="action-hint">
+                    <i class="bi bi-eye"></i> View
+                </span>
+                <span class="action-hint">
+                    <i class="bi bi-file-pdf"></i> PDF
+                </span>
+                <span class="action-hint">
+                    <i class="bi bi-whatsapp"></i> Share
+                </span>
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<!-- Empty State -->
+<div class="empty-state">
+    <i class="bi bi-receipt"></i>
+    <h3>No invoices found</h3>
+    <p>{% if request.GET.q or request.GET.status %}Try adjusting your search or filters{% else %}Create your first invoice to get started{% endif %}</p>
+    {% if not request.GET.q and not request.GET.status %}
+    <a href="{% url 'invoice_create' %}" class="btn btn-primary btn-lg">
+        <i class="bi bi-plus-circle"></i> Create Invoice
+    </a>
+    {% else %}
+    <a href="{% url 'invoice_list' %}" class="btn btn-outline-primary">
+        <i class="bi bi-x-circle"></i> Clear Filters
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+<style>
+.invoice-card-footer {
+    display: flex;
+    gap: 1rem;
+    padding-top: 0.75rem;
+    margin-top: 0.75rem;
+    border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+.action-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted, #6b7280);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.invoice-balance {
+    font-size: 0.8rem;
+    margin-top: 0.125rem;
+}
+</style>
+{% endblock %}
