@@ -194,6 +194,15 @@
                     <label class="form-label">Status</label>
                     {{ form.status }}
                 </div>
+                <div class="col-12">
+                    <div class="form-check form-switch mt-2">
+                        {{ form.is_quotation }}
+                        <label class="form-check-label" for="id_is_quotation">
+                            <i class="bi bi-file-text"></i> Mark as Quotation
+                            <small class="text-muted d-block">Check this to create a Quotation instead of Invoice</small>
+                        </label>
+                    </div>
+                </div>
             </div>
         </div>
 

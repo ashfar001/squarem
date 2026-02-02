@@ -3,7 +3,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Invoice {{ invoice.invoice_number }}</title>
+    <title>{% if invoice.is_quotation %}Quotation{% else %}Invoice{% endif %} {{ invoice.invoice_number }}</title>
     <style>
         @page {
             size: A4;
@@ -235,7 +235,7 @@
                 {% endif %}
             </td>
             <td style="width: 40%;">
-                <div class="title"> INVOICE</div>
+                <div class="title">{% if invoice.is_quotation %}QUOTATION{% else %}INVOICE{% endif %}</div>
             </td>
         </tr>
     </table>

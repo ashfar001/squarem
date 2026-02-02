@@ -59,7 +59,7 @@ class InvoiceForm(forms.ModelForm):
         model = Invoice
         fields = [
             'company', 'client', 'invoice_date', 'due_date', 
-            'status', 'currency', 'notes', 'terms'
+            'status', 'currency', 'is_quotation', 'notes', 'terms'
         ]
         widgets = {
             'company': forms.Select(attrs={'class': 'form-control', 'required': True}),
@@ -68,6 +68,7 @@ class InvoiceForm(forms.ModelForm):
             'due_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date', 'required': True}),
             'status': forms.Select(attrs={'class': 'form-control'}),
             'currency': forms.Select(attrs={'class': 'form-control'}),
+            'is_quotation': forms.CheckboxInput(attrs={'class': 'form-check-input', 'role': 'switch'}),
             'notes': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
             'terms': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
         }

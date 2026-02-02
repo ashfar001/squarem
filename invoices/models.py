@@ -149,6 +149,9 @@ class Invoice(models.Model):
     notes = models.TextField(blank=True, help_text='Internal notes')
     terms = models.TextField(blank=True, help_text='Terms and conditions')
     
+    # Quotation flag - when checked, document is a quotation instead of invoice
+    is_quotation = models.BooleanField(default=False, verbose_name='Mark as Quotation', help_text='Check this to create a Quotation instead of Invoice')
+    
     # QR Code for UPI payment
     qr_code = models.ImageField(upload_to='qr_codes/', blank=True, null=True)
     
