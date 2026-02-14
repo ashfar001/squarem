@@ -1,130 +1,100 @@
-{% extends 'invoices/base.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — Squarem</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f5f5f5;
+            color: #111;
+        }
+        .card {
+            width: 100%;
+            max-width: 360px;
+            padding: 2.5rem 2rem;
+            margin: 1rem;
+        }
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            text-align: center;
+            letter-spacing: -0.02em;
+        }
+        label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 0.4rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        input {
+            width: 100%;
+            padding: 0.75rem 0;
+            border: none;
+            border-bottom: 1.5px solid #ccc;
+            background: transparent;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+            margin-bottom: 1.5rem;
+        }
+        input:focus { border-bottom-color: #111; }
+        input::placeholder { color: #bbb; }
+        button {
+            width: 100%;
+            padding: 0.85rem;
+            background: #111;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 0.5rem;
+        }
+        button:hover { background: #333; }
+        .error {
+            background: #fee;
+            color: #c00;
+            padding: 0.65rem 1rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Squarem</h1>
 
-{% block title %}Login - Squarem Invoice{% endblock %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="error">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
 
-{% block extra_css %}
-<style>
-    .login-page {
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 2rem 1rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-    
-    .login-card {
-        background: white;
-        border-radius: 24px;
-        padding: 2.5rem 2rem;
-        width: 100%;
-        max-width: 400px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-    }
-    
-    .login-logo {
-        width: 80px;
-        height: 80px;
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-        border-radius: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 1.5rem;
-    }
-    
-    .login-logo i {
-        font-size: 2.5rem;
-        color: white;
-    }
-    
-    .login-title {
-        font-size: 1.75rem;
-        font-weight: 700;
-        text-align: center;
-        margin-bottom: 0.5rem;
-        color: #1f2937;
-    }
-    
-    .login-subtitle {
-        text-align: center;
-        color: #6b7280;
-        margin-bottom: 2rem;
-    }
-    
-    .login-form .form-label {
-        font-weight: 600;
-        font-size: 0.875rem;
-        color: #374151;
-        margin-bottom: 0.5rem;
-    }
-    
-    .login-form .form-control {
-        min-height: 52px;
-        border-radius: 12px;
-        font-size: 16px;
-        border: 2px solid #e5e7eb;
-        padding: 0.75rem 1rem;
-    }
-    
-    .login-form .form-control:focus {
-        border-color: #6366f1;
-        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-    }
-    
-    .login-form .btn {
-        min-height: 52px;
-        border-radius: 12px;
-        font-weight: 600;
-        font-size: 1rem;
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-        border: none;
-    }
-    
-    .login-form .btn:hover {
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-        transform: translateY(-1px);
-    }
-    
-    /* Hide bottom nav on login */
-    .bottom-nav {
-        display: none !important;
-    }
-    
-    .main-content {
-        padding-bottom: 0 !important;
-    }
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="login-page">
-    <div class="login-card">
-        <div class="login-logo">
-            <i class="bi bi-receipt"></i>
-        </div>
-        
-        <h1 class="login-title">Squarem Invoice</h1>
-        <p class="login-subtitle">Sign in to manage your invoices</p>
-        
-        <form method="post" class="login-form">
+        <form method="post">
             {% csrf_token %}
-            <div class="mb-3">
-                <label for="username" class="form-label">Username</label>
-                <input type="text" class="form-control" id="username" 
-                       name="username" required autofocus
-                       placeholder="Enter your username">
-            </div>
-            <div class="mb-4">
-                <label for="password" class="form-label">Password</label>
-                <input type="password" class="form-control" id="password" 
-                       name="password" required
-                       placeholder="Enter your password">
-            </div>
-            <button type="submit" class="btn btn-primary w-100">
-                <i class="bi bi-box-arrow-in-right me-2"></i> Sign In
-            </button>
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" placeholder="username" required autofocus>
+
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="password" required>
+
+            <button type="submit">Sign in</button>
         </form>
     </div>
-</div>
-{% endblock %}
+</body>
+</html>

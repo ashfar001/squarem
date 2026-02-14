@@ -25,8 +25,10 @@ SECRET_KEY = 'django-insecure-vvf-%*nz+=jvzyeffpw-e!8xw^0tkttft@htyzyk+ghlhg-)(z
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["*"]
-
+ALLOWED_HOSTS = [
+    "squarem.in",
+    "www.squarem.in",
+]
 
 # Application definition
 
@@ -144,5 +146,12 @@ LOGOUT_REDIRECT_URL = 'login'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Security settings for production
-CSRF_TRUSTED_ORIGINS = ['https://*.amazonaws.com', 'http://*.amazonaws.com']
+CSRF_TRUSTED_ORIGINS = [
+    "https://squarem.in",
+    "https://www.squarem.in",
+]
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+USE_X_FORWARDED_HOST = True
+SECURE_SSL_REDIRECT = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

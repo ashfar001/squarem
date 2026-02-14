@@ -44,6 +44,7 @@ def logout_view(request):
 
 
 # Dashboard
+@login_required
 def dashboard(request):
     """Main dashboard with statistics"""
     invoices = Invoice.objects.all()
@@ -76,12 +77,14 @@ def dashboard(request):
 
 
 # Company Views
+@login_required
 def company_list(request):
     """List all companies"""
     companies = Company.objects.all()
     return render(request, 'invoices/company_list.html', {'companies': companies})
 
 
+@login_required
 def company_create(request):
     """Create new company"""
     if request.method == 'POST':
@@ -96,6 +99,7 @@ def company_create(request):
     return render(request, 'invoices/company_form.html', {'form': form, 'action': 'Create'})
 
 
+@login_required
 def company_edit(request, pk):
     """Edit existing company"""
     company = get_object_or_404(Company, pk=pk)
@@ -112,6 +116,7 @@ def company_edit(request, pk):
     return render(request, 'invoices/company_form.html', {'form': form, 'action': 'Edit', 'company': company})
 
 
+@login_required
 def company_delete(request, pk):
     """Delete company"""
     company = get_object_or_404(Company, pk=pk)
@@ -126,12 +131,14 @@ def company_delete(request, pk):
 
 
 # Client Views
+@login_required
 def client_list(request):
     """List all clients"""
     clients = Client.objects.all()
     return render(request, 'invoices/client_list.html', {'clients': clients})
 
 
+@login_required
 def client_create(request):
     """Create new client"""
     if request.method == 'POST':
@@ -149,6 +156,7 @@ def client_create(request):
     return render(request, 'invoices/client_form.html', {'form': form, 'action': 'Create'})
 
 
+@login_required
 def client_edit(request, pk):
     """Edit existing client"""
     client = get_object_or_404(Client, pk=pk)
@@ -165,6 +173,7 @@ def client_edit(request, pk):
     return render(request, 'invoices/client_form.html', {'form': form, 'action': 'Edit', 'client': client})
 
 
+@login_required
 def client_delete(request, pk):
     """Delete client"""
     client = get_object_or_404(Client, pk=pk)
@@ -179,6 +188,7 @@ def client_delete(request, pk):
 
 
 # Invoice Views
+@login_required
 def invoice_list(request):
     """List all invoices"""
     invoices = Invoice.objects.select_related('client', 'company').all()
@@ -199,6 +209,7 @@ def invoice_list(request):
     return render(request, 'invoices/invoice_list.html', {'invoices': invoices})
 
 
+@login_required
 def invoice_create(request):
     """Create new invoice with line items"""
     if request.method == 'POST':
@@ -239,6 +250,7 @@ def invoice_create(request):
     })
 
 
+@login_required
 def invoice_edit(request, pk):
     """Edit existing invoice"""
     invoice = get_object_or_404(Invoice, pk=pk)
@@ -271,6 +283,7 @@ def invoice_edit(request, pk):
     })
 
 
+@login_required
 def invoice_detail(request, pk):
     """View invoice details in printable format"""
     invoice = get_object_or_404(
@@ -295,6 +308,7 @@ def invoice_detail(request, pk):
     return render(request, 'invoices/invoice_detail.html', context)
 
 
+@login_required
 def invoice_mark_paid(request, pk):
     """Mark invoice as paid"""
     invoice = get_object_or_404(Invoice, pk=pk)
@@ -308,6 +322,7 @@ def invoice_mark_paid(request, pk):
     return redirect('invoice_detail', pk=pk)
 
 
+@login_required
 def invoice_delete(request, pk):
     """Delete invoice"""
     invoice = get_object_or_404(Invoice, pk=pk)
@@ -321,6 +336,7 @@ def invoice_delete(request, pk):
     return render(request, 'invoices/invoice_confirm_delete.html', {'invoice': invoice})
 
 
+@login_required
 def invoice_pdf(request, pk):
     """Generate PDF from invoice"""
     invoice = get_object_or_404(
@@ -366,6 +382,7 @@ def invoice_pdf(request, pk):
         return redirect('invoice_detail', pk=pk)
 
 
+@login_required
 def payment_create(request, invoice_pk):
     """Record an advance/partial payment for an invoice"""
     invoice = get_object_or_404(Invoice, pk=invoice_pk)
@@ -389,6 +406,7 @@ def payment_create(request, invoice_pk):
     })
 
 
+@login_required
 def payment_receipt_pdf(request, pk):
     """Generate PDF receipt for a specific payment"""
     payment = get_object_or_404(Payment.objects.select_related('invoice__client', 'invoice__company'), pk=pk)
