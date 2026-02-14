@@ -28,6 +28,8 @@ DEBUG = False
 ALLOWED_HOSTS = [
     "squarem.in",
     "www.squarem.in",
+    "localhost",
+    "127.0.0.1",
 ]
 
 # Application definition
@@ -146,6 +148,8 @@ LOGOUT_REDIRECT_URL = 'login'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Security settings for production
+# NOTE: SSL/HTTPS redirect is handled by Nginx. Do NOT enable SECURE_SSL_REDIRECT
+# here or it will cause an infinite redirect loop.
 CSRF_TRUSTED_ORIGINS = [
     "https://squarem.in",
     "https://www.squarem.in",
@@ -153,5 +157,9 @@ CSRF_TRUSTED_ORIGINS = [
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 USE_X_FORWARDED_HOST = True
-SECURE_SSL_REDIRECT = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# SECURE_SSL_REDIRECT must be False — Nginx handles HTTPS enforcement.
+# Enabling this creates an infinite 301 redirect loop because:
+#   Nginx (HTTPS) -> Gunicorn (HTTP) -> Django sees HTTP -> redirects to HTTPS -> repeat
+SECURE_SSL_REDIRECT = False

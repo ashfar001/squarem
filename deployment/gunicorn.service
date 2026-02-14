@@ -1,0 +1,33 @@
+# Gunicorn systemd service file for squarem.in
+# Copy to: /etc/systemd/system/gunicorn.service
+#
+# After copying:
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable gunicorn
+#   sudo systemctl start gunicorn
+#
+# To check status:
+#   sudo systemctl status gunicorn
+#   sudo journalctl -u gunicorn -f
+
+[Unit]
+Description=Gunicorn daemon for squarem.in
+After=network.target
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/squarem
+ExecStart=/home/ubuntu/squarem/venv/bin/gunicorn \
+    --workers 3 \
+    --bind unix:/home/ubuntu/squarem/gunicorn.sock \
+    --access-logfile /home/ubuntu/squarem/logs/gunicorn-access.log \
+    --error-logfile /home/ubuntu/squarem/logs/gunicorn-error.log \
+    --timeout 120 \
+    invoice.wsgi:application
+
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
